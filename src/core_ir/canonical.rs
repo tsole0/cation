@@ -119,6 +119,6 @@ mod tests {
     fn test_flatten_leaf_node() {
         let s = Expr::symbol(Symbol::new("phi"));
         let flattened = s.flatten();
-        assert_eq!(&*s, &*flattened); // should be the same Arc
+        assert_eq!(&*s, &*flattened); // should be the same value
     }
 }
