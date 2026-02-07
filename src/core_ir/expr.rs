@@ -53,3 +53,62 @@ impl Expr {
         Arc::new(Expr::Product(factors))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core_ir::pauli::{Pauli, PauliString};
+    use crate::core_ir::symb::Symbol;
+
+    #[test]
+    fn identical_scalars_are_equal() {
+        let a = Expr::Scalar(1.0);
+        let b = Expr::Scalar(1.0);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn identical_expessions_are_equal() {
+        let s = Symbol::new("phi");
+        
+        let a = Expr::Symbol(s.clone());
+        let b = Expr::Symbol(s);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn structurally_identical_sums_are_equal() {
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
+        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)]));
+
+        let a = Expr::sum(vec![x.clone(), y.clone()]);
+        let b = Expr::sum(vec![x, y]);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn algebraicly_identical_structurally_different_sums_not_equal() {
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
+        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)]));
+
+        let a = Expr::sum(vec![x.clone(), y.clone()]);
+        let b = Expr::sum(vec![y, x]);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn structurally_identical_sums_and_products_not_equal() {
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
+        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)]));
+
+        let sum = Expr::sum(vec![x.clone(), y.clone()]);
+        let product = Expr::product(vec![x, y]);
+
+        assert_ne!(sum, product);
+    }
+
+}

@@ -57,3 +57,48 @@ impl fmt::Display for PauliString {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn identity_operators_are_removed() {
+        let ps = PauliString::new(
+            vec![
+            (0, Pauli::X),
+            (1, Pauli::I),
+            (2, Pauli::Z),
+            ]
+        );
+        assert_eq!(ps.ops, &[(0, Pauli::X,), (2, Pauli::Z)]);
+    }
+
+    #[test]
+    fn pauli_operators_are_sorted() {
+        let ps = PauliString::new(
+            vec![
+                (2, Pauli::X),
+                (1, Pauli::Z),
+                (0, Pauli::Y),
+            ]
+        );
+
+        assert_eq!(ps.ops,
+            &[
+                (0, Pauli::Y),
+                (1, Pauli::Z),
+                (2, Pauli:: X),
+            ]
+        )
+    }
+
+    #[test]
+    fn empty_pauli_equivalent_to_identity() {
+        let ps = PauliString::new(vec![]);
+
+        assert!(ps.ops.is_empty());
+
+    }
+
+}
