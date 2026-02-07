@@ -43,3 +43,35 @@ impl fmt::Display for Symbol {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn named_symbols_with_same_name_are_equal() {
+        let a = Symbol::new("theta");
+        let b = Symbol::new("theta");
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn bound_and_unbound_symbols_are_not_equal() {
+        let a = Symbol::new("theta");
+        let b = Symbol::Bound {
+            name: ("theta".to_string()),
+            value: (1.0)
+        };
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn symbol_name_preserved_when_bound() {
+        let s = Symbol::Bound {
+            name: ("phi".to_string()),
+            value: (1.0)
+        };
+        assert_eq!(s.name(), "phi");
+    }
+}
