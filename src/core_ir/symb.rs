@@ -6,7 +6,7 @@
 
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Symbol {
     /// A symbol representing a parameter in an operator expression.
     Named(String),

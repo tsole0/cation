@@ -5,6 +5,7 @@
 //! canonical form.
 
 use std::fmt;
+use std::cmp::Ordering;
 
 /// Single qubit Pauli operators.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -24,6 +25,21 @@ pub enum Pauli {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PauliString {
     ops: Vec<(usize, Pauli)>
+}
+
+/// Order PauliStrings by their index
+impl Ord for PauliString {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.ops.iter().map(|(idx, _)| idx)
+            .cmp(other.ops.iter().map(|(idx, _)| idx))
+    }
+}
+
+/// PartialOrd required by Ord
+impl PartialOrd for PauliString {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl PauliString {

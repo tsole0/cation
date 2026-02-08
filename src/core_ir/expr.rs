@@ -12,7 +12,7 @@ use crate::core_ir::symb::Symbol;
 ///
 /// Expressions form a purely symbolic representation and carry no
 /// evaluation semantics. All expressions are immutable.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Expr {
     /// Real scalar constant
     Scalar(f64),

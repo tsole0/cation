@@ -11,10 +11,6 @@ trait Flatten {
     fn flatten(&self) -> Arc<Expr>;
 }
 
-trait Canonical {
-    fn canonical(&self) -> Arc<Expr>;
-}
-
 /// Flatten the abstract syntax tree of an Expression
 /// Does not simplify algebra
 impl Flatten for Expr {
@@ -57,6 +53,40 @@ impl Flatten for Expr {
                 Arc::new(self.clone())
             }
 
+        }
+    }
+}
+
+trait Canonical {
+    fn canonical(&self) -> Arc<Expr>;
+}
+
+/// Flatten and sort tree.
+impl Canonical for Expr {
+    fn canonical(&self) -> Arc<Expr> {
+        // Flatten
+        let flat = self.flatten();
+        // Canonicalize
+        match flat.as_ref() {
+            Expr::Sum(terms) => {
+                let mut out: Vec<Arc<Expr>> = Vec::new();
+                for term in terms.iter() {
+                    let term_canonical = term.canonical();
+                    out.push(term_canonical);
+                }
+                out.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+                Expr::sum(out)
+            }
+            Expr::Product(factors) => {
+                let mut out: Vec<Arc<Expr>> = Vec::new();
+                for factor in factors.iter() {
+                    let factor_canonical = factor.canonical();
+                    out.push(factor_canonical);
+                }
+                // Do NOT sort since we assume products do not commute.
+                Expr::product(out)
+            }
+            _ => flat // Leaf node case
         }
     }
 }
@@ -121,4 +151,122 @@ mod tests {
         let flattened = s.flatten();
         assert_eq!(&*s, &*flattened); // should be the same value
     }
+
+    #[test]
+    fn test_canonical_same_order() {
+        let a = Expr::symbol(Symbol::new("a"));
+        let b = Expr::symbol(Symbol::new("b"));
+        let c = Expr::symbol(Symbol::new("c"));
+
+        let sum1 = Expr::sum(vec![a.clone(), b.clone(), c.clone()]);
+        let sum2 = Expr::sum(vec![a.clone(), b.clone(), c.clone()]);
+
+        assert_eq!(sum1.canonical(), sum2.canonical());
+    }
+
+    #[test]
+    fn test_canonical_different_order() {
+        let a = Expr::symbol(Symbol::new("a"));
+        let b = Expr::symbol(Symbol::new("b"));
+        let c = Expr::symbol(Symbol::new("c"));
+
+        let sum1 = Expr::sum(vec![a.clone(), b.clone(), c.clone()]);
+        let sum2 = Expr::sum(vec![c.clone(), a.clone(), b.clone()]);
+
+        assert_eq!(sum1.canonical(), sum2.canonical());
+    }
+
+    #[test]
+    fn test_canonical_nested() {
+        let a = Expr::symbol(Symbol::new("a"));
+        let b = Expr::symbol(Symbol::new("b"));
+        let c = Expr::symbol(Symbol::new("c"));
+
+        let inner_sum1 = Expr::sum(vec![c.clone(), b.clone()]);
+        let nested1 = Expr::sum(vec![a.clone(), inner_sum1]);
+
+        let inner_sum2 = Expr::sum(vec![b.clone(), c.clone()]);
+        let nested2 = Expr::sum(vec![a.clone(), inner_sum2]);
+
+        assert_eq!(nested1.canonical(), nested2.canonical());
+    }
+
+    #[test]
+    fn test_canonicalized_nested_products_different_order_not_equal() {
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
+        let y = Expr::pauli(PauliString::new(vec![(0, Pauli::Y)]));
+
+        let s = Expr::symbol(Symbol::new("phi"));
+        let a = Expr::sum(
+            vec![
+                Expr::scalar(6.0),
+                s.clone(),
+                x.clone()
+            ]
+        );
+
+        let combined1 = Expr::product(
+            vec![
+                a.clone(),
+                x.clone(),
+                s.clone(),
+                y.clone()
+            ]
+        );
+
+        let combined2: Arc<Expr> = Expr::product(
+            vec![
+                x,
+                y,
+                s,
+                a
+            ]
+        );
+
+        assert_ne!(combined1.canonical(), combined2.canonical());
+    }
+
+        #[test]
+    fn test_canonicalized_products_with_changed_internal_sums_equal() {
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
+        let y = Expr::pauli(PauliString::new(vec![(0, Pauli::Y)]));
+
+        let s = Expr::symbol(Symbol::new("phi"));
+        let a = Expr::sum(
+            vec![
+                Expr::scalar(6.0),
+                s.clone(),
+                x.clone()
+            ]
+        );
+        let a_changed = Expr::sum(
+            vec![
+                Expr::scalar(6.0),
+                x.clone(),
+                s.clone()
+            ]
+        );
+
+        let combined1 = Expr::product(
+            vec![
+                a.clone(),
+                x.clone(),
+                s.clone(),
+                y.clone()
+            ]
+        );
+
+        let combined2: Arc<Expr> = Expr::product(
+            vec![
+                a_changed,
+                x,
+                s,
+                y
+            ]
+        );
+
+        assert_eq!(combined1.canonical(), combined2.canonical());
+
+    }
+
 }
