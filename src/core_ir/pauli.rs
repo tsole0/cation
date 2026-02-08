@@ -149,4 +149,14 @@ mod tests {
 
     }
 
+    #[test]
+    fn convert_string_to_paulistring() {
+        PauliString::from_string("XZYIZZ").unwrap();
+    }
+
+    #[test]
+    fn invalid_pauli_chars_return_error() {
+        assert!(PauliString::from_string("XZTAL").is_err());
+    }
+
 }
