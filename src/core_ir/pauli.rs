@@ -16,6 +16,22 @@ pub enum Pauli {
     Z,
 }
 
+impl TryFrom<char> for Pauli {
+
+    type Error = String;
+
+    fn try_from(c: char) -> Result<Self, Self::Error> {
+        
+        match c {
+            'I' => Ok(Self::I),
+            'X' => Ok(Self::X),
+            'Y' => Ok(Self::Y),
+            'Z' => Ok(Self::Z),
+            _ => Err(format!("Invalid Pauli character: '{}'", c))
+        }
+    }
+}
+
 /// A tensor product of Pauli operators acting on specific qubit indices.
 ///
 /// Invariants:
@@ -54,6 +70,22 @@ impl PauliString {
         // and should be validated later.
 
         Self { ops }
+    }
+
+    /// Generate a PauliString from a string input
+    /// May return an error if user inputs invalid chars
+    /// Thus, for internal use `PauliString::new()` is preferred
+    pub fn from_string(input: impl Into<String>) -> Result<Self, String> {
+        let ops = input
+        .into()
+        .chars()
+        .enumerate()
+        .map(|(idx, char)| {
+            Pauli::try_from(char)
+            .map(|pauli| (idx, pauli))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+        Ok(Self::new(ops))
     }
 }
 
