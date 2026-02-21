@@ -79,13 +79,13 @@ trait Canonical {
 
 impl Canonical for Expr {
     fn canonical(&self) -> Arc<Canonicalized<Expr>> {
-        Arc::new(Canonicalized::new(self.canonical_inner()))
+        Arc::new(Canonicalized::new(self.canonicalize_inner()))
     }
 }
 
 /// Flatten and sort tree.
 impl Expr {
-    fn canonical_inner(&self) -> Expr {
+    fn canonicalize_inner(&self) -> Expr {
         // Flatten
         let flat = self.flatten();
         // Canonicalize
@@ -93,7 +93,7 @@ impl Expr {
             Expr::Sum(terms) => {
                 let mut out: Vec<Arc<Expr>> = Vec::new();
                 for term in terms.iter() {
-                    let term_canonical = Arc::new(term.canonical_inner());
+                    let term_canonical = Arc::new(term.canonicalize_inner());
                     out.push(term_canonical);
                 }
                 out.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
@@ -102,7 +102,7 @@ impl Expr {
             Expr::Product(factors) => {
                 let mut out: Vec<Arc<Expr>> = Vec::new();
                 for factor in factors.iter() {
-                    let factor_canonical = Arc::new(factor.canonical_inner());
+                    let factor_canonical = Arc::new(factor.canonicalize_inner());
                     out.push(factor_canonical);
                 }
                 // Do NOT sort since we assume products do not commute.
