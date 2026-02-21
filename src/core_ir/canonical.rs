@@ -7,8 +7,24 @@ use std::sync::Arc;
 
 use crate::core_ir::expr::Expr;
 
+/// Wrapper showing that internal expression is canonicalized.
+/// Functions may require arguments of canonical form
+/// to guarantee that they work as intended
+#[derive(Clone, Debug, PartialEq)]
+pub struct Canonicalized<T> {
+    inner: T
+}
+
 trait Flatten {
     fn flatten(&self) -> Arc<Expr>;
+}
+
+impl Canonicalized<Expr> {
+    pub fn get(&self) -> &Expr {&self.inner}
+
+    fn new(expr: Expr) -> Self {
+        Canonicalized { inner: expr }
+    }
 }
 
 /// Flatten the abstract syntax tree of an Expression
@@ -58,12 +74,18 @@ impl Flatten for Expr {
 }
 
 trait Canonical {
-    fn canonical(&self) -> Arc<Expr>;
+    fn canonical(&self) -> Arc<Canonicalized<Expr>>;
+}
+
+impl Canonical for Expr {
+    fn canonical(&self) -> Arc<Canonicalized<Expr>> {
+        Arc::new(Canonicalized::new(self.canonical_inner()))
+    }
 }
 
 /// Flatten and sort tree.
-impl Canonical for Expr {
-    fn canonical(&self) -> Arc<Expr> {
+impl Expr {
+    fn canonical_inner(&self) -> Expr {
         // Flatten
         let flat = self.flatten();
         // Canonicalize
@@ -71,22 +93,22 @@ impl Canonical for Expr {
             Expr::Sum(terms) => {
                 let mut out: Vec<Arc<Expr>> = Vec::new();
                 for term in terms.iter() {
-                    let term_canonical = term.canonical();
+                    let term_canonical = Arc::new(term.canonical_inner());
                     out.push(term_canonical);
                 }
                 out.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-                Expr::sum(out)
+                Arc::unwrap_or_clone(Expr::sum(out))
             }
             Expr::Product(factors) => {
                 let mut out: Vec<Arc<Expr>> = Vec::new();
                 for factor in factors.iter() {
-                    let factor_canonical = factor.canonical();
+                    let factor_canonical = Arc::new(factor.canonical_inner());
                     out.push(factor_canonical);
                 }
                 // Do NOT sort since we assume products do not commute.
-                Expr::product(out)
+                Arc::unwrap_or_clone(Expr::product(out))
             }
-            _ => flat // Leaf node case
+            _ => Arc::unwrap_or_clone(flat) // Leaf node case
         }
     }
 }
