@@ -73,7 +73,7 @@ impl Flatten for Expr {
     }
 }
 
-trait Canonical {
+pub trait Canonical {
     fn canonical(&self) -> Arc<Canonicalized<Expr>>;
 }
 
