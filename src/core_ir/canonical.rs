@@ -5,7 +5,7 @@
 //! deterministically single output for all ALGEBRAICLY equivalent expressions.
 use std::sync::Arc;
 
-use crate::core_ir::expr::Expr;
+use crate::core_ir::{expr::Expr};
 
 /// Wrapper showing that internal expression is canonicalized.
 /// Functions may require arguments of canonical form
@@ -90,6 +90,7 @@ impl Expr {
         let flat = self.flatten();
         // Canonicalize
         match flat.as_ref() {
+
             Expr::Sum(terms) => {
                 let mut out: Vec<Arc<Expr>> = Vec::new();
                 for term in terms.iter() {
@@ -99,6 +100,7 @@ impl Expr {
                 out.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
                 Arc::unwrap_or_clone(Expr::sum(out))
             }
+
             Expr::Product(factors) => {
                 let mut out: Vec<Arc<Expr>> = Vec::new();
                 for factor in factors.iter() {
@@ -148,9 +150,9 @@ mod tests {
     fn test_flatten_nested_product() {
         // (x * (y * z)) → (x * y * z)
 
-        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
-        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)]));
-        let z = Expr::pauli(PauliString::new(vec![(2, Pauli::Z)]));
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)], 0));
+        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)], 0));
+        let z = Expr::pauli(PauliString::new(vec![(2, Pauli::Z)], 0));
 
         let inner_prod = Expr::product(vec![y.clone(), z.clone()]);
         let nested_prod = Expr::product(vec![x.clone(), inner_prod]);
@@ -215,8 +217,8 @@ mod tests {
 
     #[test]
     fn test_canonicalized_nested_products_different_order_not_equal() {
-        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
-        let y = Expr::pauli(PauliString::new(vec![(0, Pauli::Y)]));
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)], 0));
+        let y = Expr::pauli(PauliString::new(vec![(0, Pauli::Y)], 0));
 
         let s = Expr::symbol(Symbol::new("phi"));
         let a = Expr::sum(
@@ -250,8 +252,8 @@ mod tests {
 
         #[test]
     fn test_canonicalized_products_with_changed_internal_sums_equal() {
-        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
-        let y = Expr::pauli(PauliString::new(vec![(0, Pauli::Y)]));
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)], 0));
+        let y = Expr::pauli(PauliString::new(vec![(0, Pauli::Y)], 0));
 
         let s = Expr::symbol(Symbol::new("phi"));
         let a = Expr::sum(
