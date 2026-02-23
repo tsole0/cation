@@ -45,6 +45,10 @@ impl Expr {
         Arc::new(Expr::Pauli(p))
     }
 
+    pub fn pauli_empty() -> Arc<Self> {
+        Arc::new(Expr::Pauli(PauliString::empty()))
+    }
+
     pub fn sum(s: Vec<Arc<Expr>>) -> Arc<Self> {
         Arc::new(Expr::Sum(s))
     }
@@ -80,8 +84,8 @@ mod tests {
 
     #[test]
     fn structurally_identical_sums_are_equal() {
-        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
-        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)]));
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)], 0));
+        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)], 0));
 
         let a = Expr::sum(vec![x.clone(), y.clone()]);
         let b = Expr::sum(vec![x, y]);
@@ -91,8 +95,8 @@ mod tests {
 
     #[test]
     fn algebraicly_identical_structurally_different_sums_not_equal() {
-        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
-        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)]));
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)], 0));
+        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)], 0));
 
         let a = Expr::sum(vec![x.clone(), y.clone()]);
         let b = Expr::sum(vec![y, x]);
@@ -102,8 +106,8 @@ mod tests {
 
     #[test]
     fn structurally_identical_sums_and_products_not_equal() {
-        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)]));
-        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)]));
+        let x = Expr::pauli(PauliString::new(vec![(0, Pauli::X)], 0));
+        let y = Expr::pauli(PauliString::new(vec![(1, Pauli::Y)], 0));
 
         let sum = Expr::sum(vec![x.clone(), y.clone()]);
         let product = Expr::product(vec![x, y]);
